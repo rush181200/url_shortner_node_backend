@@ -1,54 +1,60 @@
 const express = require("express");
-const cors = require("cors");
 const bodyParser = require("body-parser");
-const crypto = require("crypto");
+const cors = require("cors");
+const fetch = require("node-fetch");
 
 const app = express();
-const PORT = 5001;
+const PORT = process.env.PORT || 5000;
 
-// CORS configuration to allow requests from your frontend
-app.use(
-  cors({
-    origin: "http://localhost:5173", // Frontend origin
-    methods: ["GET", "POST", "OPTIONS"], // Allow specific methods
-    allowedHeaders: ["Content-Type"], // Allow headers like Content-Type
-    optionsSuccessStatus: 200, // Some browsers (IE) choke on 204
-  })
-);
-
+// Middleware
+app.use(cors());
 app.use(bodyParser.json());
 
-// Handle preflight requests
-app.options("*", cors()); // Preflight route for all requests
+// CORS middleware (optional if using cors package)
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+  next();
+});
 
-// Simple in-memory store for shortened URLs
-const urlStore = {};
-
-app.post("/shorten", (req, res) => {
+// POST /shorten endpoint to forward requests to the external URL shortening service
+app.post("/shorten", async (req, res) => {
   const { url } = req.body;
 
-  // Generate a random string for the shortened URL
-  const randomString = crypto.randomBytes(4).toString("hex"); // 8 characters long
-  const shortUrl = `http://urlshortner-fonvamvf.b4a.run/${randomString}`;
-
-  // Save the mapping in memory
-  urlStore[randomString] = url;
-
-  res.json({ shortUrl });
-});
-
-// Create a redirect endpoint for shortened URLs
-app.get("/:shortenedUrl", (req, res) => {
-  const { shortenedUrl } = req.params;
-  const originalUrl = urlStore[shortenedUrl];
-
-  if (originalUrl) {
-    return res.redirect(originalUrl);
+  if (!url) {
+    return res.status(400).json({ error: "URL is required" });
   }
 
-  return res.status(404).send("Not Found");
+  try {
+    // Assuming this URL is where your actual shortening logic is located
+    const response = await fetch(
+      "http://urlshortner-fonvamvf.b4a.run/shorten",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ url }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to shorten URL");
+    }
+
+    const data = await response.json();
+    res.json({ shortUrl: data.shortUrl });
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
 });
 
+// Start the server
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`Server is running on http://localhost:${PORT}`);
 });
