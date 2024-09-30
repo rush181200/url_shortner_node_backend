@@ -6,7 +6,11 @@ const crypto = require("crypto");
 const app = express();
 const PORT = 5001;
 
-app.use(cors());
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+  })
+);
 app.use(bodyParser.json());
 
 // Simple in-memory store for shortened URLs
