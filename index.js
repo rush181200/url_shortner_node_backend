@@ -17,7 +17,7 @@ app.post("/shorten", (req, res) => {
 
   // Generate a random string for the shortened URL
   const randomString = crypto.randomBytes(4).toString("hex"); // 8 characters long
-  const shortUrl = `http://localhost:${PORT}/${randomString}`;
+  const shortUrl = `http://urlshortner-fonvamvf.b4a.run/${randomString}`;
 
   // Save the mapping in memory (could be a DB in a real application)
   urlStore[randomString] = url;
