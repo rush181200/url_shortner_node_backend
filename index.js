@@ -6,11 +6,20 @@ const crypto = require("crypto");
 const app = express();
 const PORT = 5001;
 
+// Allow all CORS methods and headers
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: "http://localhost:5173", // Allow the frontend's origin
+    methods: "GET,POST,OPTIONS", // Allow specific HTTP methods
+    allowedHeaders: "Content-Type", // Allow specific headers
+    credentials: true,
   })
 );
+
+// Middleware to handle preflight requests
+app.options("*", cors());
+
+// Parse incoming request body as JSON
 app.use(bodyParser.json());
 
 // Simple in-memory store for shortened URLs
