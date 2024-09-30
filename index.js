@@ -6,21 +6,20 @@ const crypto = require("crypto");
 const app = express();
 const PORT = 5001;
 
-// Allow all CORS methods and headers
+// CORS configuration to allow requests from your frontend
 app.use(
   cors({
-    origin: "http://localhost:5173", // Allow the frontend's origin
-    methods: "GET,POST,OPTIONS", // Allow specific HTTP methods
-    allowedHeaders: "Content-Type", // Allow specific headers
-    credentials: true,
+    origin: "http://localhost:5173", // Frontend origin
+    methods: ["GET", "POST", "OPTIONS"], // Allow specific methods
+    allowedHeaders: ["Content-Type"], // Allow headers like Content-Type
+    optionsSuccessStatus: 200, // Some browsers (IE) choke on 204
   })
 );
 
-// Middleware to handle preflight requests
-app.options("*", cors());
-
-// Parse incoming request body as JSON
 app.use(bodyParser.json());
+
+// Handle preflight requests
+app.options("*", cors()); // Preflight route for all requests
 
 // Simple in-memory store for shortened URLs
 const urlStore = {};
@@ -32,13 +31,13 @@ app.post("/shorten", (req, res) => {
   const randomString = crypto.randomBytes(4).toString("hex"); // 8 characters long
   const shortUrl = `http://urlshortner-fonvamvf.b4a.run/${randomString}`;
 
-  // Save the mapping in memory (could be a DB in a real application)
+  // Save the mapping in memory
   urlStore[randomString] = url;
 
   res.json({ shortUrl });
 });
 
-// Optional: Create a redirect endpoint for shortened URLs
+// Create a redirect endpoint for shortened URLs
 app.get("/:shortenedUrl", (req, res) => {
   const { shortenedUrl } = req.params;
   const originalUrl = urlStore[shortenedUrl];
